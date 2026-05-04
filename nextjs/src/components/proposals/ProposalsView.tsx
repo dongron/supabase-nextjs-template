@@ -26,9 +26,15 @@ export default function ProposalsView({ proposals: initial }: ProposalsViewProps
     );
   }
 
+  function handleStageUpdate(id: string, stage: string) {
+    setProposals((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, stage } : p)),
+    );
+  }
+
   return (
     <>
-      <ProposalQueue proposals={proposals} onDelete={handleDelete} onMemoUpdate={handleMemoUpdate} />
+      <ProposalQueue proposals={proposals} onDelete={handleDelete} onMemoUpdate={handleMemoUpdate} onStageUpdate={handleStageUpdate} />
       <AddProposalForm onAdd={handleAdd} />
     </>
   );

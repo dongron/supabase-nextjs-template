@@ -31,6 +31,7 @@ function makeProposal(overrides: Partial<ProposalRow> = {}): ProposalRow {
     owner: 'user-1',
     archived_at: null,
     voice_memo: null,
+    quote: null,
     ...overrides,
   };
 }
@@ -155,20 +156,12 @@ describe('ProspectActionModal', () => {
     expect(defaultProps.onMemoUpdate).not.toHaveBeenCalled();
   });
 
-  it('Generate Quote button is present and click has no side effects', () => {
-    const fetchSpy = vi.spyOn(global, 'fetch');
+  it('Generate Quote button is present and enabled', () => {
     renderModal();
 
     const generateBtn = screen.getByRole('button', { name: /generate quote/i });
     expect(generateBtn).toBeDefined();
     expect(generateBtn).not.toBeDisabled();
-
-    fireEvent.click(generateBtn);
-
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(defaultProps.onMemoUpdate).not.toHaveBeenCalled();
-    expect(defaultProps.onDelete).not.toHaveBeenCalled();
-    expect(defaultProps.onOpenChange).not.toHaveBeenCalled();
   });
 
   it('closing dialog without saving does not call onMemoUpdate', () => {

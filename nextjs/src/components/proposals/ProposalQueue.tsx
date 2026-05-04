@@ -8,9 +8,10 @@ interface ProposalQueueProps {
   proposals: ProposalRow[];
   onDelete: (id: string) => void;
   onMemoUpdate: (id: string, memo: string | null) => void;
+  onStageUpdate: (id: string, stage: string) => void;
 }
 
-export default function ProposalQueue({ proposals, onDelete, onMemoUpdate }: ProposalQueueProps) {
+export default function ProposalQueue({ proposals, onDelete, onMemoUpdate, onStageUpdate }: ProposalQueueProps) {
 
   if (proposals.length === 0) {
     return (
@@ -59,7 +60,7 @@ export default function ProposalQueue({ proposals, onDelete, onMemoUpdate }: Pro
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
           {proposals.map((proposal) => (
-            <ProposalRowComponent key={proposal.id} proposal={proposal} onDelete={onDelete} onMemoUpdate={onMemoUpdate} />
+            <ProposalRowComponent key={proposal.id} proposal={proposal} onDelete={onDelete} onMemoUpdate={onMemoUpdate} onStageUpdate={onStageUpdate} />
           ))}
         </tbody>
       </table>

@@ -58,6 +58,7 @@ export type Database = {
           owner: string
           archived_at: string | null
           voice_memo: string | null
+          quote: string | null
         }
         Insert: {
           id?: string
@@ -93,6 +94,7 @@ export type Database = {
           owner?: string
           archived_at?: string | null
           voice_memo?: string | null
+          quote?: string | null
         }
         Relationships: [
           {

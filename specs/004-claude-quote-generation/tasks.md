@@ -15,9 +15,9 @@
 
 **Purpose**: Install the Anthropic SDK, apply the database migration, and patch the TypeScript types so all subsequent tasks compile.
 
-- [ ] T001 Install `@anthropic-ai/sdk` dependency in `nextjs/` (`pnpm add @anthropic-ai/sdk`)
-- [ ] T002 Create migration `supabase/migrations/20260504140000_add_quote_to_proposals.sql` — `ALTER TABLE proposals ADD COLUMN IF NOT EXISTS quote text;`
-- [ ] T003 [P] Add `quote: string | null` to `proposals.Row` and `quote?: string | null` to `proposals.Update` in `nextjs/src/lib/types.ts`
+- [X] T001 Install `@anthropic-ai/sdk` dependency in `nextjs/` (`pnpm add @anthropic-ai/sdk`)
+- [X] T002 Create migration `supabase/migrations/20260504140000_add_quote_to_proposals.sql` — `ALTER TABLE proposals ADD COLUMN IF NOT EXISTS quote text;`
+- [X] T003 [P] Add `quote: string | null` to `proposals.Row` and `quote?: string | null` to `proposals.Update` in `nextjs/src/lib/types.ts`
 
 **Checkpoint**: SDK installed, migration applied, types compile — all subsequent tasks unblocked.
 
@@ -29,8 +29,8 @@
 
 **⚠️ CRITICAL**: API route (US1) and ReviewQuoteModal (US2) both import from this module. Must be complete first.
 
-- [ ] T004 Create `nextjs/src/lib/quote.ts` with `QuoteService` type, `GenerateQuoteResponse` type, `SaveQuoteRequest` type, `normalizePrice(raw: string | number | null): number | null` function, `parseStoredQuote(json: string | null): QuoteService[]` function
-- [ ] T005 [P] Create `nextjs/src/lib/quote.test.ts` with unit tests for `normalizePrice` (strips non-numeric chars, blank → null, valid number → number, NaN → null) and `parseStoredQuote` (valid JSON, null input, malformed JSON → empty array)
+- [X] T004 Create `nextjs/src/lib/quote.ts` with `QuoteService` type, `GenerateQuoteResponse` type, `SaveQuoteRequest` type, `normalizePrice(raw: string | number | null): number | null` function, `parseStoredQuote(json: string | null): QuoteService[]` function
+- [X] T005 [P] Create `nextjs/src/lib/quote.test.ts` with unit tests for `normalizePrice` (strips non-numeric chars, blank → null, valid number → number, NaN → null) and `parseStoredQuote` (valid JSON, null input, malformed JSON → empty array)
 
 **Checkpoint**: `pnpm vitest run src/lib/quote.test.ts` passes.
 
@@ -42,10 +42,10 @@
 
 **Independent Test**: Prospect with voice memo → click "Generate Quote" → loading spinner appears → `POST /api/app/proposals/[id]/quote` succeeds → 200 response with `{ services: [...] }` containing at least one extracted service.
 
-- [ ] T006 [US1] Create directory `nextjs/src/app/api/app/proposals/[id]/quote/` and create `route.ts` — export `POST` handler: authenticate via `createSSRSassClient()` + `auth.getUser()`, fetch prospect's `voice_memo` + `owner` check (404 if not found), return 400 if `voice_memo` is null/empty
-- [ ] T007 [US1] In `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — fetch all services from Supabase (id, name columns only), instantiate `new Anthropic({ apiKey: process.env.PRIVATE_CALUDE_API_KEY })`, call `client.messages.create` with model `claude-3-5-sonnet-20241022`, hardcoded system prompt, tool-use schema for `extract_services` tool with `tool_choice: { type: 'any' }`
-- [ ] T008 [US1] In `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — parse the `tool_use` block from Claude response, map each service to `QuoteService` shape (match `serviceName` against services catalog for `serviceId`), return 422 if tool_use block is absent, return `NextResponse.json({ services })` on success; catch `Anthropic.APIError` → 500
-- [ ] T009 [P] [US1] Create `nextjs/src/app/api/app/proposals/__tests__/quote.test.ts` — unit tests: 401 when no session, 400 when no voice memo, 404 when prospect not found, 200 with mocked Claude response returning two services (one matched, one unmatched), 422 when Claude returns no tool_use block, 500 on `Anthropic.APIError`
+- [X] T006 [US1] Create directory `nextjs/src/app/api/app/proposals/[id]/quote/` and create `route.ts` — export `POST` handler: authenticate via `createSSRSassClient()` + `auth.getUser()`, fetch prospect's `voice_memo` + `owner` check (404 if not found), return 400 if `voice_memo` is null/empty
+- [X] T007 [US1] In `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — fetch all services from Supabase (id, name columns only), instantiate `new Anthropic({ apiKey: process.env.PRIVATE_CALUDE_API_KEY })`, call `client.messages.create` with model `claude-3-5-sonnet-20241022`, hardcoded system prompt, tool-use schema for `extract_services` tool with `tool_choice: { type: 'any' }`
+- [X] T008 [US1] In `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — parse the `tool_use` block from Claude response, map each service to `QuoteService` shape (match `serviceName` against services catalog for `serviceId`), return 422 if tool_use block is absent, return `NextResponse.json({ services })` on success; catch `Anthropic.APIError` → 500
+- [X] T009 [P] [US1] Create `nextjs/src/app/api/app/proposals/__tests__/quote.test.ts` — unit tests: 401 when no session, 400 when no voice memo, 404 when prospect not found, 200 with mocked Claude response returning two services (one matched, one unmatched), 422 when Claude returns no tool_use block, 500 on `Anthropic.APIError`
 
 **Checkpoint**: `pnpm vitest run src/app/api/app/proposals/__tests__/quote.test.ts` passes. Manual: `POST /api/app/proposals/:id/quote` with a real prospect ID returns a services list.
 
@@ -57,10 +57,10 @@
 
 **Independent Test**: Render `<ReviewQuoteModal>` with mock services data → verify editable inputs, checkmarks on matched services, "Add Row" appends a blank row, delete button removes a row, "Cancel" does not call `onSave`.
 
-- [ ] T010 [US2] Create `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — shadcn `Dialog` with title "Review Quote"; accept props `open: boolean`, `onOpenChange`, `services: QuoteService[]`, `onSave: (services: QuoteService[]) => void`; initialize local state from `services` prop
-- [ ] T011 [US2] In `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — render services table/list: each row has a `CheckCircle2` icon (visible only when `serviceId !== null`), an `Input` for `serviceName` (type text), an `Input` for `price` (type text, shows empty string when null), and a trash/X `Button` to delete the row
-- [ ] T012 [US2] In `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — add "Add Row" `Button` that appends `{ serviceId: null, serviceName: '', price: null }` to local state; add "Save" `Button` that calls `onSave(localServices)` then calls `onOpenChange(false)`; add "Cancel" `Button` that calls `onOpenChange(false)` without saving
-- [ ] T013 [P] [US2] Create `nextjs/src/components/proposals/__tests__/ReviewQuoteModal.test.tsx` — tests: renders with matched/unmatched services (checkmark present/absent), name input is editable, price input is editable, Add Row appends blank row, Delete removes row, Save calls `onSave` with current state, Cancel does not call `onSave`
+- [X] T010 [US2] Create `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — shadcn `Dialog` with title "Review Quote"; accept props `open: boolean`, `onOpenChange`, `services: QuoteService[]`, `onSave: (services: QuoteService[]) => void`; initialize local state from `services` prop
+- [X] T011 [US2] In `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — render services table/list: each row has a `CheckCircle2` icon (visible only when `serviceId !== null`), an `Input` for `serviceName` (type text), an `Input` for `price` (type text, shows empty string when null), and a trash/X `Button` to delete the row
+- [X] T012 [US2] In `nextjs/src/components/proposals/ReviewQuoteModal.tsx` — add "Add Row" `Button` that appends `{ serviceId: null, serviceName: '', price: null }` to local state; add "Save" `Button` that calls `onSave(localServices)` then calls `onOpenChange(false)`; add "Cancel" `Button` that calls `onOpenChange(false)` without saving
+- [X] T013 [P] [US2] Create `nextjs/src/components/proposals/__tests__/ReviewQuoteModal.test.tsx` — tests: renders with matched/unmatched services (checkmark present/absent), name input is editable, price input is editable, Add Row appends blank row, Delete removes row, Save calls `onSave` with current state, Cancel does not call `onSave`
 
 **Checkpoint**: `pnpm vitest run src/components/proposals/__tests__/ReviewQuoteModal.test.tsx` passes. Manual: Review Quote modal opens, inputs are editable, rows can be added/deleted.
 
@@ -72,11 +72,11 @@
 
 **Independent Test**: Complete generation flow → click Save → close both modals → reopen action modal → verify quote list is displayed with correct service names and prices.
 
-- [ ] T014 [US3] Add `PATCH` handler to `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — authenticate, validate request body has `services` array (400 if missing), normalize each price with `normalizePrice()` from `lib/quote.ts`, `JSON.stringify` the normalized array, update `proposals.quote` via Supabase `UPDATE ... SET quote = $1 WHERE id = $2 AND owner = auth.uid()`, return `{ quote: storedString }` on 200
-- [ ] T015 [US3] Wire up `ProspectActionModal.tsx`: import `ReviewQuoteModal`, add `isGenerating: boolean`, `quoteError: string | null`, `reviewModalOpen: boolean`, `generatedServices: QuoteService[]` state; replace the `onClick={() => undefined}` on "Generate Quote" button with handler that calls `POST /api/app/proposals/[id]/quote`, sets loading/error state, opens review modal on success (FR-001, FR-005, FR-010, FR-011)
-- [ ] T016 [US3] In `ProspectActionModal.tsx` — implement `handleSaveQuote(services: QuoteService[])`: calls `PATCH /api/app/proposals/[id]/quote` with services, on success updates the local `proposal.quote` state and closes the review modal (FR-008)
-- [ ] T017 [US3] In `ProspectActionModal.tsx` — add saved quote display section below "Generate Quote" button: if `proposal.quote` is non-null, parse with `parseStoredQuote()` and render a list of `serviceName — price` rows (price shown as `$X` or "—" if null); if quote is null, show nothing (FR-009)
-- [ ] T018 [P] [US3] Add test cases to `nextjs/src/app/api/app/proposals/__tests__/quote.test.ts` for `PATCH` handler: 400 on missing services, 200 with normalized prices (strips "$", "€", blank → null), 404 when prospect not found, 500 on Supabase write error
+- [X] T014 [US3] Add `PATCH` handler to `nextjs/src/app/api/app/proposals/[id]/quote/route.ts` — authenticate, validate request body has `services` array (400 if missing), normalize each price with `normalizePrice()` from `lib/quote.ts`, `JSON.stringify` the normalized array, update `proposals.quote` via Supabase `UPDATE ... SET quote = $1 WHERE id = $2 AND owner = auth.uid()`, return `{ quote: storedString }` on 200
+- [X] T015 [US3] Wire up `ProspectActionModal.tsx`: import `ReviewQuoteModal`, add `isGenerating: boolean`, `quoteError: string | null`, `reviewModalOpen: boolean`, `generatedServices: QuoteService[]` state; replace the `onClick={() => undefined}` on "Generate Quote" button with handler that calls `POST /api/app/proposals/[id]/quote`, sets loading/error state, opens review modal on success (FR-001, FR-005, FR-010, FR-011)
+- [X] T016 [US3] In `ProspectActionModal.tsx` — implement `handleSaveQuote(services: QuoteService[])`: calls `PATCH /api/app/proposals/[id]/quote` with services, on success updates the local `proposal.quote` state and closes the review modal (FR-008)
+- [X] T017 [US3] In `ProspectActionModal.tsx` — add saved quote display section below "Generate Quote" button: if `proposal.quote` is non-null, parse with `parseStoredQuote()` and render a list of `serviceName — price` rows (price shown as `$X` or "—" if null); if quote is null, show nothing (FR-009)
+- [X] T018 [P] [US3] Add test cases to `nextjs/src/app/api/app/proposals/__tests__/quote.test.ts` for `PATCH` handler: 400 on missing services, 200 with normalized prices (strips "$", "€", blank → null), 404 when prospect not found, 500 on Supabase write error
 
 **Checkpoint**: Full flow works end-to-end. Reopen action modal after saving → quote list displayed. Generate again → old quote replaced.
 
@@ -86,9 +86,9 @@
 
 **Purpose**: Accessibility, responsive layout, error state refinement, and final type-check.
 
-- [ ] T019 [P] In `ReviewQuoteModal.tsx` — add `aria-label` to each delete button (`aria-label="Remove {serviceName}"`), ensure "Save" button is disabled while a save is in progress (add `isSaving` state), ensure all inputs have associated labels or `aria-label`
-- [ ] T020 [P] In `ProspectActionModal.tsx` — render inline error banner (shadcn `Alert` variant `destructive`) with "Try Again" button when `quoteError` is set; clear error on retry click; show spinner inside "Generate Quote" button when `isGenerating` is true (FR-011)
-- [ ] T021 Run `cd nextjs && pnpm tsc --noEmit` and fix all TypeScript errors introduced by this feature
+- [X] T019 [P] In `ReviewQuoteModal.tsx` — add `aria-label` to each delete button (`aria-label="Remove {serviceName}"`), ensure "Save" button is disabled while a save is in progress (add `isSaving` state), ensure all inputs have associated labels or `aria-label`
+- [X] T020 [P] In `ProspectActionModal.tsx` — render inline error banner (shadcn `Alert` variant `destructive`) with "Try Again" button when `quoteError` is set; clear error on retry click; show spinner inside "Generate Quote" button when `isGenerating` is true (FR-011)
+- [X] T021 Run `cd nextjs && pnpm tsc --noEmit` and fix all TypeScript errors introduced by this feature
 
 ---
 

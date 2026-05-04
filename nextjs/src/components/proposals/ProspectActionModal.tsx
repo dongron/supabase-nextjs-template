@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { ProposalRow } from '@/lib/proposals';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { ProposalRow, ProposalStage } from '@/lib/proposals';
+import { STAGE_LABELS } from '@/lib/proposals';
+import ReviewQuoteModal from './ReviewQuoteModal';
+import { parseTextQuote, type QuoteService } from '@/lib/quote';
 
 interface ProspectActionModalProps {
   proposal: ProposalRow;
@@ -19,6 +23,7 @@ interface ProspectActionModalProps {
   onOpenChange: (open: boolean) => void;
   onDelete: (id: string) => void;
   onMemoUpdate: (id: string, memo: string | null) => void;
+  onStageUpdate: (id: string, stage: string) => void;
 }
 
 export default function ProspectActionModal({
@@ -27,6 +32,7 @@ export default function ProspectActionModal({
   onOpenChange,
   onDelete,
   onMemoUpdate,
+  onStageUpdate,
 }: ProspectActionModalProps) {
   const [memoText, setMemoText] = useState(proposal.voice_memo ?? '');
   const [saving, setSaving] = useState(false);
@@ -34,6 +40,16 @@ export default function ProspectActionModal({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [generatedServices, setGeneratedServices] = useState<QuoteService[]>([]);
+  const [isSavingQuote, setIsSavingQuote] = useState(false);
+  const [localQuote, setLocalQuote] = useState<string | null>(proposal.quote ?? null);
+  const [editQuoteServices, setEditQuoteServices] = useState<QuoteService[]>([]);
+  const [localStage, setLocalStage] = useState<string>(proposal.stage);
+  const [stageSaving, setStageSaving] = useState(false);
+  const [stageError, setStageError] = useState<string | null>(null);
 
   // Reset local state whenever the modal opens (or proposal changes)
   useEffect(() => {
@@ -42,8 +58,38 @@ export default function ProspectActionModal({
       setSaveError(null);
       setSaveSuccess(false);
       setDeleteError(null);
+      setQuoteError(null);
+      setLocalQuote(proposal.quote ?? null);
+      setLocalStage(proposal.stage);
+      setStageError(null);
     }
-  }, [open, proposal.voice_memo]);
+  }, [open, proposal.voice_memo, proposal.quote, proposal.stage]);
+
+  async function handleStageChange(newStage: ProposalStage) {
+    const prev = localStage;
+    setLocalStage(newStage);
+    setStageSaving(true);
+    setStageError(null);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setStageError((body as { error?: string }).error ?? 'Failed to update stage');
+        setLocalStage(prev);
+        return;
+      }
+      onStageUpdate(proposal.id, newStage);
+    } catch {
+      setStageError('Network error. Please try again.');
+      setLocalStage(prev);
+    } finally {
+      setStageSaving(false);
+    }
+  }
 
   async function handleSaveMemo() {
     setSaving(true);
@@ -67,6 +113,66 @@ export default function ProspectActionModal({
       setSaveError('Network error. Please try again.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleGenerateQuote() {
+    setIsGenerating(true);
+    setQuoteError(null);
+    setEditQuoteServices([]);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/quote`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setQuoteError((body as { error?: string }).error ?? 'Failed to generate quote');
+        return;
+      }
+      const data = await res.json() as { services: QuoteService[] };
+      setGeneratedServices(data.services);
+      setReviewModalOpen(true);
+    } catch {
+      setQuoteError('Network error. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleSaveQuote(services: QuoteService[]) {
+    setIsSavingQuote(true);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/quote`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setQuoteError((body as { error?: string }).error ?? 'Failed to save quote');
+        return;
+      }
+      const saved = await res.json() as { quote: string };
+      setLocalQuote(saved.quote);
+      setReviewModalOpen(false);
+
+      // Also persist matched services to prospect_services (non-blocking)
+      const matchedServices = services
+        .filter((s) => s.serviceId !== null && s.price !== null)
+        .map((s) => ({ service_id: s.serviceId as string, price: s.price as number }));
+      if (matchedServices.length > 0) {
+        fetch(`/api/app/proposals/${proposal.id}/services`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ services: matchedServices }),
+        }).catch(() => {
+          // Non-blocking: quote is already saved
+        });
+      }
+    } catch {
+      setQuoteError('Network error. Please try again.');
+    } finally {
+      setIsSavingQuote(false);
     }
   }
 
@@ -99,6 +205,7 @@ export default function ProspectActionModal({
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -106,6 +213,26 @@ export default function ProspectActionModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
+          {/* Stage section */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={`stage-${proposal.id}`}>Stage</Label>
+            <select
+              id={`stage-${proposal.id}`}
+              value={localStage}
+              disabled={stageSaving}
+              onChange={(e) => handleStageChange(e.target.value as ProposalStage)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              aria-label="Proposal stage"
+            >
+              {(Object.entries(STAGE_LABELS) as [ProposalStage, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            {stageError && (
+              <p className="text-sm text-red-500 dark:text-red-400" role="alert">{stageError}</p>
+            )}
+          </div>
+
           {/* Voice memo section */}
           <div className="flex flex-col gap-2">
             <Label htmlFor={`voice-memo-${proposal.id}`}>Voice Memo</Label>
@@ -139,22 +266,55 @@ export default function ProspectActionModal({
             </Button>
           </div>
 
-          {/* Generate Quote placeholder */}
-          <Button
-            variant="outline"
-            onClick={() => undefined}
-            aria-label="Generate quote (coming soon)"
-          >
-            Generate Quote
-          </Button>
+          {/* Generate Quote section */}
+          <div className="flex flex-col gap-2">
+            {quoteError && (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription className="flex items-center justify-between gap-2">
+                  <span>{quoteError}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setQuoteError(null); handleGenerateQuote(); }}
+                  >
+                    Try Again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleGenerateQuote}
+              disabled={isGenerating}
+              aria-label="Generate quote from voice memo"
+            >
+              {isGenerating ? 'Generating…' : 'Generate Quote'}
+            </Button>
+
+            {localQuote && !localQuote.trimStart().startsWith('[') && (
+              <div className="flex flex-col gap-1 mt-1">
+                <pre className="text-sm whitespace-pre-wrap font-sans" aria-label="Saved quote">{localQuote}</pre>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditQuoteServices(parseTextQuote(localQuote));
+                    setReviewModalOpen(true);
+                  }}
+                >
+                  Edit Quote
+                </Button>
+              </div>
+            )}
+          </div>
 
           {/* Bottom actions */}
           <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-            <Button variant="secondary" asChild className="w-full">
+            {/* <Button variant="secondary" asChild className="w-full">
               <Link href={`/app/proposals/${proposal.id}/services`}>
                 Services
               </Link>
-            </Button>
+            </Button> */}
             {deleteError && (
               <p className="text-sm text-red-500 dark:text-red-400" role="alert">
                 {deleteError}
@@ -173,5 +333,14 @@ export default function ProspectActionModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    <ReviewQuoteModal
+      open={reviewModalOpen}
+      onOpenChange={setReviewModalOpen}
+      services={editQuoteServices.length > 0 ? editQuoteServices : generatedServices}
+      onSave={handleSaveQuote}
+      isSaving={isSavingQuote}
+    />
+    </>
   );
 }

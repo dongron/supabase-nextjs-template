@@ -55,9 +55,10 @@ interface ProposalRowProps {
   proposal: ProposalRow;
   onDelete: (id: string) => void;
   onMemoUpdate: (id: string, memo: string | null) => void;
+  onStageUpdate: (id: string, stage: string) => void;
 }
 
-export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate }: ProposalRowProps) {
+export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate, onStageUpdate }: ProposalRowProps) {
   const overdue = isOverdueReview(proposal);
 
   const [designerState, setDesignerState] = useState<DesignerState>({
@@ -71,6 +72,7 @@ export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate 
   const [dismissing, setDismissing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [memo, setMemo] = useState<string | null>(proposal.voice_memo ?? null);
+  const [localStage, setLocalStage] = useState<string>(proposal.stage);
 
   const isRenderEtaOverdueLocal =
     !!proposal.render_required &&
@@ -129,7 +131,7 @@ export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate 
       {/* Stage */}
       <td className="px-4 py-3 whitespace-nowrap">
         <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
-          {STAGE_LABELS[proposal.stage as ProposalStage] ?? proposal.stage}
+          {STAGE_LABELS[localStage as ProposalStage] ?? localStage}
         </span>
       </td>
 
@@ -191,6 +193,10 @@ export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate 
       onMemoUpdate={(id, m) => {
         setMemo(m);
         onMemoUpdate(id, m);
+      }}
+      onStageUpdate={(id, s) => {
+        setLocalStage(s);
+        onStageUpdate(id, s);
       }}
     />
     </>

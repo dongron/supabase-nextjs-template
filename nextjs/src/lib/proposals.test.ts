@@ -28,6 +28,7 @@ function makeProposal(overrides: Partial<ProposalRow> = {}): ProposalRow {
     owner: 'user-1',
     archived_at: null,
     voice_memo: null,
+    quote: null,
     ...overrides,
   };
 }
