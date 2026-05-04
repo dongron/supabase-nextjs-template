@@ -37,7 +37,7 @@ export default function FileManagementPage() {
             const { data, error } = await supabase.getFiles(user!.id);
 
             if (error) throw error;
-            setFiles(data || []);
+            setFiles((data as FileObject[]) || []);
         } catch (err) {
             setError('Failed to load files');
             console.error('Error loading files:', err);
