@@ -1,19 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import type { ProposalRow } from '@/lib/proposals';
 import ProposalRowComponent from './ProposalRow';
 
 interface ProposalQueueProps {
   proposals: ProposalRow[];
+  onDelete: (id: string) => void;
 }
 
-export default function ProposalQueue({ proposals: initial }: ProposalQueueProps) {
-  const [proposals, setProposals] = useState(initial);
-
-  function handleDelete(id: string) {
-    setProposals((prev) => prev.filter((p) => p.id !== id));
-  }
+export default function ProposalQueue({ proposals, onDelete }: ProposalQueueProps) {
 
   if (proposals.length === 0) {
     return (
@@ -62,7 +58,7 @@ export default function ProposalQueue({ proposals: initial }: ProposalQueueProps
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
           {proposals.map((proposal) => (
-            <ProposalRowComponent key={proposal.id} proposal={proposal} onDelete={handleDelete} />
+            <ProposalRowComponent key={proposal.id} proposal={proposal} onDelete={onDelete} />
           ))}
         </tbody>
       </table>

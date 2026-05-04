@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { STAGE_LABELS, type ProposalStage } from '@/lib/proposals';
+import { STAGE_LABELS, type ProposalStage, type ProposalRow } from '@/lib/proposals';
 
 const STAGES = Object.keys(STAGE_LABELS) as ProposalStage[];
 
@@ -19,11 +18,14 @@ const INITIAL_STATE: FormState = {
   neighborhood: '',
   walk_date: '',
   estimated_value: '',
-  stage: 'voice_memo_received',
+  stage: 'lead_received',
 };
 
-export default function AddProposalForm() {
-  const router = useRouter();
+interface AddProposalFormProps {
+  onAdd?: (proposal: ProposalRow) => void;
+}
+
+export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -70,8 +72,9 @@ export default function AddProposalForm() {
         return;
       }
 
+      const newProposal = (await res.json()) as ProposalRow;
       setForm(INITIAL_STATE);
-      router.refresh();
+      onAdd?.(newProposal);
     } catch {
       setError('Network error. Please try again.');
     } finally {

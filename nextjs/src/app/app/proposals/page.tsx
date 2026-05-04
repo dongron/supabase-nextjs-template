@@ -2,8 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { createSSRSassClient } from '@/lib/supabase/server';
 import { fetchProposalQueue } from '@/lib/supabase/proposals';
-import ProposalQueue from '@/components/proposals/ProposalQueue';
-import AddProposalForm from '@/components/proposals/AddProposalForm';
+import ProposalsView from '@/components/proposals/ProposalsView';
 
 export default async function ProposalsPage() {
   const client = await createSSRSassClient();
@@ -26,8 +25,7 @@ export default async function ProposalsPage() {
         </p>
       </div>
 
-      <ProposalQueue proposals={proposals} />
-      <AddProposalForm />
+      <ProposalsView proposals={proposals} />
     </div>
   );
 }

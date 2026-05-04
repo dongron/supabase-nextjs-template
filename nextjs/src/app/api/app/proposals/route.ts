@@ -3,6 +3,7 @@ import { createSSRSassClient } from '@/lib/supabase/server';
 import type { ProposalInsert, ProposalStage } from '@/lib/proposals';
 
 const VALID_STAGES: ProposalStage[] = [
+  'lead_received',
   'voice_memo_received',
   'processing',
   'ready_for_review',
