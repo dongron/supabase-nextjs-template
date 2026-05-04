@@ -9,7 +9,31 @@
     "chat.tools.terminal.autoApprove": {
         ".specify/scripts/bash/": true,
         ".specify/scripts/powershell/": true,
-        "test": true
+        "test": true,
+        "/^bash \\.specify/extensions/git/scripts/bash/create-new-feature\\.sh --json --short-name \"proposal-pipeline-queue\" \"proposal-pipeline-queue\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^mkdir -p /Users/dominik/projects/supabase-nextjs-template/specs/001-proposal-pipeline-queue/checklists$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^bash \\.specify/scripts/bash/check-prerequisites\\.sh --json --paths-only$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^bash \\.specify/scripts/bash/setup-plan\\.sh --json$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^bash \\.specify/scripts/bash/check-prerequisites\\.sh --json 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^bash \\.specify/scripts/bash/check-prerequisites\\.sh --json --require-tasks --include-tasks 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
 

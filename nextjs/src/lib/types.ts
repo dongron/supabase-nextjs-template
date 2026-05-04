@@ -39,6 +39,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      proposals: {
+        Row: {
+          id: string
+          created_at: string
+          customer_name: string
+          neighborhood: string
+          walk_date: string | null
+          estimated_value: number
+          stage: string
+          stage_entered_at: string
+          render_required: boolean | null
+          designer_notified: boolean
+          designer_notified_at: string | null
+          designer_eta: string | null
+          render_delivered: boolean
+          needs_attention: boolean
+          owner: string
+          archived_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          customer_name: string
+          neighborhood: string
+          walk_date?: string | null
+          estimated_value?: number
+          stage?: string
+          stage_entered_at?: string
+          designer_notified?: boolean
+          designer_notified_at?: string | null
+          designer_eta?: string | null
+          render_delivered?: boolean
+          needs_attention?: boolean
+          owner: string
+          archived_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          customer_name?: string
+          neighborhood?: string
+          walk_date?: string | null
+          estimated_value?: number
+          stage?: string
+          stage_entered_at?: string
+          designer_notified?: boolean
+          designer_notified_at?: string | null
+          designer_eta?: string | null
+          render_delivered?: boolean
+          needs_attention?: boolean
+          owner?: string
+          archived_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'proposals_owner_fkey'
+            columns: ['owner']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       todo_list: {
         Row: {
           created_at: string
