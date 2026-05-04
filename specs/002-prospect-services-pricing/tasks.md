@@ -19,12 +19,12 @@
 
 **⚠️ CRITICAL**: No user story implementation can begin until T001–T006 are complete.
 
-- [ ] T001 Create Supabase migration `supabase/migrations/20260504120000_services.sql` — `services` table (id, created_at, owner, name, description, default_price, sort_order), CHECK constraint, `services_owner_sort_idx` index, RLS enabled, four RLS policies (SELECT/INSERT/UPDATE/DELETE by `auth.uid() = owner`)
-- [ ] T002 Create Supabase migration `supabase/migrations/20260504120001_prospect_services.sql` — `prospect_services` table (id, prospect_id, service_id, price, created_at, updated_at), UNIQUE(prospect_id, service_id), `prospect_services_prospect_idx` index, RLS enabled, three RLS policies (SELECT/INSERT/UPDATE scoped via `prospect_id IN (SELECT id FROM proposals WHERE owner = auth.uid())`)
-- [ ] T003 Add 10 example services to `supabase/seed.sql` (Landscape Design Consultation $2500, Custom Stone Patio Installation $18000, Swimming Pool Construction $85000, Outdoor Kitchen & BBQ Area $22000, Pergola / Gazebo Construction $14000, Irrigation System Installation $6500, Outdoor Lighting Design & Installation $8000, Retaining Wall Construction $12000, Driveway & Pathways Paving $16000, Garden Planting & Landscaping $9500) — seeded with `owner = auth.uid()` using Supabase's seed pattern
-- [ ] T004 [P] Create `nextjs/src/lib/services.ts` — export types `ServiceCatalogRow`, `ProspectServiceRow`, `ServicesPricingRow`; export pure function `calcTotal(prices: Record<string, string>): number` summing `parseFloat(v) || 0` for all values
-- [ ] T005 [P] Create `nextjs/src/lib/supabase/services.ts` — export `fetchProspectServices(client: SassClient, userId: string, prospectId: string): Promise<ServicesPricingRow[]>` that queries all services for owner ordered by sort_order, then LEFT JOINs with prospect_services for the given prospectId, merging price (fallback to default_price)
-- [ ] T006 [P] Add "Services" link to `ProposalRow.tsx` (or equivalent navigation point in `nextjs/src/components/proposals/ProposalRow.tsx`) pointing to `/app/proposals/[id]/services`
+- [X] T001 Create Supabase migration `supabase/migrations/20260504120000_services.sql` — `services` table (id, created_at, owner, name, description, default_price, sort_order), CHECK constraint, `services_owner_sort_idx` index, RLS enabled, four RLS policies (SELECT/INSERT/UPDATE/DELETE by `auth.uid() = owner`)
+- [X] T002 Create Supabase migration `supabase/migrations/20260504120001_prospect_services.sql` — `prospect_services` table (id, prospect_id, service_id, price, created_at, updated_at), UNIQUE(prospect_id, service_id), `prospect_services_prospect_idx` index, RLS enabled, three RLS policies (SELECT/INSERT/UPDATE scoped via `prospect_id IN (SELECT id FROM proposals WHERE owner = auth.uid())`)
+- [X] T003 Add 10 example services to `supabase/seed.sql` (Landscape Design Consultation $2500, Custom Stone Patio Installation $18000, Swimming Pool Construction $85000, Outdoor Kitchen & BBQ Area $22000, Pergola / Gazebo Construction $14000, Irrigation System Installation $6500, Outdoor Lighting Design & Installation $8000, Retaining Wall Construction $12000, Driveway & Pathways Paving $16000, Garden Planting & Landscaping $9500) — seeded with `owner = auth.uid()` using Supabase's seed pattern
+- [X] T004 [P] Create `nextjs/src/lib/services.ts` — export types `ServiceCatalogRow`, `ProspectServiceRow`, `ServicesPricingRow`; export pure function `calcTotal(prices: Record<string, string>): number` summing `parseFloat(v) || 0` for all values
+- [X] T005 [P] Create `nextjs/src/lib/supabase/services.ts` — export `fetchProspectServices(client: SassClient, userId: string, prospectId: string): Promise<ServicesPricingRow[]>` that queries all services for owner ordered by sort_order, then LEFT JOINs with prospect_services for the given prospectId, merging price (fallback to default_price)
+- [X] T006 [P] Add "Services" link to `ProposalRow.tsx` (or equivalent navigation point in `nextjs/src/components/proposals/ProposalRow.tsx`) pointing to `/app/proposals/[id]/services`
 
 **Checkpoint**: Migrations written, types defined, data access function ready, navigation entry point wired.
 
@@ -36,8 +36,8 @@
 
 **⚠️ CRITICAL**: All user story UI tasks depend on T007 and T008.
 
-- [ ] T007 Create `nextjs/src/app/api/app/proposals/[id]/services/route.ts` — `PATCH` handler: call `getUser()` → 401 if unauthenticated; parse JSON body; validate `services` is a non-empty array and each entry has a non-empty string `service_id` and a finite non-negative number `price` (return 400 on failure); call `supabase.from('prospect_services').upsert(rows, { onConflict: 'prospect_id,service_id' })` where each row includes `prospect_id`, `service_id`, `price`, `updated_at: new Date().toISOString()`; return `{ updated: data.length }` on success or `{ error }` with status 500
-- [ ] T008 Create `nextjs/src/app/app/proposals/[id]/services/page.tsx` — async Server Component: call `createSSRSassClient()`, call `getUser()` → redirect to `/auth/login` if not authenticated; call `fetchProspectServices(client, user.id, params.id)`; render page heading with prospect id context and pass services data to `<ServicesForm>`
+- [X] T007 Create `nextjs/src/app/api/app/proposals/[id]/services/route.ts` — `PATCH` handler: call `getUser()` → 401 if unauthenticated; parse JSON body; validate `services` is a non-empty array and each entry has a non-empty string `service_id` and a finite non-negative number `price` (return 400 on failure); call `supabase.from('prospect_services').upsert(rows, { onConflict: 'prospect_id,service_id' })` where each row includes `prospect_id`, `service_id`, `price`, `updated_at: new Date().toISOString()`; return `{ updated: data.length }` on success or `{ error }` with status 500
+- [X] T008 Create `nextjs/src/app/app/proposals/[id]/services/page.tsx` — async Server Component: call `createSSRSassClient()`, call `getUser()` → redirect to `/auth/login` if not authenticated; call `fetchProspectServices(client, user.id, params.id)`; render page heading with prospect id context and pass services data to `<ServicesForm>`
 
 **Checkpoint**: PATCH route and page skeleton exist; can be tested with curl and direct URL navigation.
 
@@ -51,14 +51,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Create `nextjs/src/lib/services.test.ts` — unit tests for `calcTotal()`: empty record returns 0; all zero strings return 0; valid numeric strings sum correctly; non-numeric strings treated as 0; negative values treated as 0 (client-side guard)
-- [ ] T010 [P] [US1] Create `nextjs/src/app/api/app/proposals/[id]/services/__tests__/route.test.ts` — integration tests for PATCH handler: unauthenticated request returns 401; body with non-array services returns 400; entry with negative price returns 400; entry with NaN price returns 400; valid body calls upsert and returns 200 with `{ updated: N }`
+- [X] T009 [P] [US1] Create `nextjs/src/lib/services.test.ts` — unit tests for `calcTotal()`: empty record returns 0; all zero strings return 0; valid numeric strings sum correctly; non-numeric strings treated as 0; negative values treated as 0 (client-side guard)
+- [X] T010 [P] [US1] Create `nextjs/src/app/api/app/proposals/[id]/services/__tests__/route.test.ts` — integration tests for PATCH handler: unauthenticated request returns 401; body with non-array services returns 400; entry with negative price returns 400; entry with NaN price returns 400; valid body calls upsert and returns 200 with `{ updated: N }`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Create `nextjs/src/components/proposals/ServiceRow.tsx` — presentational 'use client' row component accepting `{ service: ServicesPricingRow; value: string; onChange: (serviceId: string, value: string) => void }` props; renders service name, description, and a numeric input with `aria-label` set to the service name; validates input is non-negative on blur; displays inline error for invalid values
-- [ ] T012 [US1] Create `nextjs/src/components/proposals/ServicesForm.tsx` — 'use client' component accepting `{ prospectId: string; initialServices: ServicesPricingRow[] }` props; initialises `prices` state as `Record<serviceId, string>` from `initialServices`; renders one `<ServiceRow>` per service; on Save click: validate all prices, set loading state, call `PATCH /api/app/proposals/[id]/services` with full payload, call `router.refresh()` on success to reload server data, show success toast; show error toast and preserve form values on failure; disable Save button during loading (depends on T011)
-- [ ] T013 [US1] Update `nextjs/src/app/app/proposals/[id]/services/page.tsx` to pass correct props to `<ServicesForm prospectId={params.id} initialServices={services} />` and add empty-state message when services array is empty (depends on T008, T012)
+- [X] T011 [P] [US1] Create `nextjs/src/components/proposals/ServiceRow.tsx` — presentational 'use client' row component accepting `{ service: ServicesPricingRow; value: string; onChange: (serviceId: string, value: string) => void }` props; renders service name, description, and a numeric input with `aria-label` set to the service name; validates input is non-negative on blur; displays inline error for invalid values
+- [X] T012 [US1] Create `nextjs/src/components/proposals/ServicesForm.tsx` — 'use client' component accepting `{ prospectId: string; initialServices: ServicesPricingRow[] }` props; initialises `prices` state as `Record<serviceId, string>` from `initialServices`; renders one `<ServiceRow>` per service; on Save click: validate all prices, set loading state, call `PATCH /api/app/proposals/[id]/services` with full payload, call `router.refresh()` on success to reload server data, show success toast; show error toast and preserve form values on failure; disable Save button during loading (depends on T011)
+- [X] T013 [US1] Update `nextjs/src/app/app/proposals/[id]/services/page.tsx` to pass correct props to `<ServicesForm prospectId={params.id} initialServices={services} />` and add empty-state message when services array is empty (depends on T008, T012)
 
 **Checkpoint**: US1 fully functional — open a prospect's services screen, edit prices, save, list reloads.
 
@@ -72,11 +72,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Extend `nextjs/src/lib/services.test.ts` — add `calcTotal` test cases: mixed valid/invalid inputs; all services with default prices produce correct sum; updating one field changes total correctly
+- [X] T014 [P] [US2] Extend `nextjs/src/lib/services.test.ts` — add `calcTotal` test cases: mixed valid/invalid inputs; all services with default prices produce correct sum; updating one field changes total correctly
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Update `nextjs/src/components/proposals/ServicesForm.tsx` — add a total line below the service rows using `calcTotal(prices)` derived on each render; format as currency (e.g. `$193,000.00`); apply `font-semibold` styling and dark-mode safe colour; total must update on every `prices` state change without an extra effect (depends on T012)
+- [X] T015 [US2] Update `nextjs/src/components/proposals/ServicesForm.tsx` — add a total line below the service rows using `calcTotal(prices)` derived on each render; format as currency (e.g. `$193,000.00`); apply `font-semibold` styling and dark-mode safe colour; total must update on every `prices` state change without an extra effect (depends on T012)
 
 **Checkpoint**: US2 functional — total visible on page load and updates in real time with price edits.
 
@@ -90,11 +90,11 @@
 
 ### Tests for User Story 3
 
-- [ ] T016 [P] [US3] Extend `nextjs/src/app/api/app/proposals/[id]/services/__tests__/route.test.ts` — add isolation test: mock two distinct prospect IDs, upsert prices for prospect A, verify prospect B's rows are untouched (distinct prospect_id in upsert rows); verify RLS policy scoping in integration test
+- [X] T016 [P] [US3] Extend `nextjs/src/app/api/app/proposals/[id]/services/__tests__/route.test.ts` — add isolation test: mock two distinct prospect IDs, upsert prices for prospect A, verify prospect B's rows are untouched (distinct prospect_id in upsert rows); verify RLS policy scoping in integration test
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Verify `fetchProspectServices` in `nextjs/src/lib/supabase/services.ts` correctly scopes the LEFT JOIN to the specific `prospectId` parameter and that rows for other prospects are never returned — add a code comment documenting the isolation guarantee; no UI changes required (isolation is enforced by the data model and RLS) (depends on T005)
+- [X] T017 [US3] Verify `fetchProspectServices` in `nextjs/src/lib/supabase/services.ts` correctly scopes the LEFT JOIN to the specific `prospectId` parameter and that rows for other prospects are never returned — add a code comment documenting the isolation guarantee; no UI changes required (isolation is enforced by the data model and RLS) (depends on T005)
 
 **Checkpoint**: US3 verified — data isolation confirmed at both the API and DB levels.
 
@@ -104,12 +104,12 @@
 
 **Purpose**: Accessibility, loading states, error states, navigation, and constitution compliance finalisation.
 
-- [ ] T018 [P] Add a mobile viewport notice to `nextjs/src/app/app/proposals/[id]/services/page.tsx` — render a dismissible banner or overlay (using a shadcn/ui `Alert`) visible only on screens narrower than `md` breakpoint (Tailwind `md:hidden`) informing users the form is optimised for desktop/tablet; this fulfils the constitution's mobile responsiveness requirement at minimum viable level
-- [ ] T019a [P] Add `aria-label` to the services form (`aria-label="Prospect services pricing"`) and ensure the Save button has `aria-busy={loading}` in `nextjs/src/components/proposals/ServicesForm.tsx`
-- [ ] T019b [P] Add a back-navigation link in `nextjs/src/app/app/proposals/[id]/services/page.tsx` pointing to `/app/proposals` so staff can return to the proposal list without using the browser back button
-- [ ] T020 [P] Update `nextjs/src/components/AppLayout.tsx` navigation array — confirm "Proposals" link exists and add no new top-level nav entry (services is a sub-screen, not a primary nav item)
-- [ ] T021 Manually verify dark mode rendering of `ServicesForm.tsx` and `ServiceRow.tsx` — confirm all text, border, input, and total colours use CSS variables or Tailwind dark: utilities; fix any hardcoded colour values found
-- [ ] T022 Run `pnpm lint` and `pnpm tsc --noEmit` in `nextjs/` — fix all reported errors before marking this task complete
+- [X] T018 [P] Add a mobile viewport notice to `nextjs/src/app/app/proposals/[id]/services/page.tsx` — render a dismissible banner or overlay (using a shadcn/ui `Alert`) visible only on screens narrower than `md` breakpoint (Tailwind `md:hidden`) informing users the form is optimised for desktop/tablet; this fulfils the constitution's mobile responsiveness requirement at minimum viable level
+- [X] T019a [P] Add `aria-label` to the services form (`aria-label="Prospect services pricing"`) and ensure the Save button has `aria-busy={loading}` in `nextjs/src/components/proposals/ServicesForm.tsx`
+- [X] T019b [P] Add a back-navigation link in `nextjs/src/app/app/proposals/[id]/services/page.tsx` pointing to `/app/proposals` so staff can return to the proposal list without using the browser back button
+- [X] T020 [P] Update `nextjs/src/components/AppLayout.tsx` navigation array — confirm "Proposals" link exists and add no new top-level nav entry (services is a sub-screen, not a primary nav item)
+- [X] T021 Manually verify dark mode rendering of `ServicesForm.tsx` and `ServiceRow.tsx` — confirm all text, border, input, and total colours use CSS variables or Tailwind dark: utilities; fix any hardcoded colour values found
+- [X] T022 Run `pnpm lint` and `pnpm tsc --noEmit` in `nextjs/` — fix all reported errors before marking this task complete
 
 ---
 

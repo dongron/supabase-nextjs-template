@@ -135,6 +135,86 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          id: string
+          created_at: string
+          owner: string
+          name: string
+          description: string
+          default_price: number
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          owner: string
+          name: string
+          description?: string
+          default_price?: number
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          owner?: string
+          name?: string
+          description?: string
+          default_price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'services_owner_fkey'
+            columns: ['owner']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      prospect_services: {
+        Row: {
+          id: string
+          prospect_id: string
+          service_id: string
+          price: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          prospect_id: string
+          service_id: string
+          price?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          prospect_id?: string
+          service_id?: string
+          price?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'prospect_services_prospect_id_fkey'
+            columns: ['prospect_id']
+            isOneToOne: false
+            referencedRelation: 'proposals'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'prospect_services_service_id_fkey'
+            columns: ['service_id']
+            isOneToOne: false
+            referencedRelation: 'services'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

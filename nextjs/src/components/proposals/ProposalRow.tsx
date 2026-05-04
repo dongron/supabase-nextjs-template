@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   STAGE_LABELS,
   isOverdueReview,
@@ -181,14 +182,23 @@ export default function ProposalRowComponent({ proposal, onDelete }: ProposalRow
 
       {/* Actions */}
       <td className="px-4 py-3 whitespace-nowrap text-right">
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-          aria-label="Remove proposal"
-        >
-          {deleting ? 'Removing…' : 'Remove'}
-        </button>
+        <div className="flex items-center justify-end gap-3">
+          <Link
+            href={`/app/proposals/${proposal.id}/services`}
+            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            aria-label={`View services for ${proposal.customer_name}`}
+          >
+            Services
+          </Link>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+            aria-label="Remove proposal"
+          >
+            {deleting ? 'Removing…' : 'Remove'}
+          </button>
+        </div>
       </td>
     </tr>
   );

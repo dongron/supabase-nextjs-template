@@ -64,4 +64,22 @@ INSERT INTO public.proposals (
   owner_id
 );
 
+-- ---------------------------------------------------------------------------
+-- Service catalog seed — Prospect Services & Pricing feature
+-- 10 example services for a high-end residential outdoor construction company.
+-- Seeded under the same owner_id as the proposals above.
+-- ---------------------------------------------------------------------------
+
+INSERT INTO public.services (owner, name, description, default_price, sort_order) VALUES
+  (owner_id, 'Landscape Design Consultation',       'Custom site assessment and detailed design plan prepared by a certified landscape architect', 2500.00,  1),
+  (owner_id, 'Custom Stone Patio Installation',     'Design and installation of natural or engineered stone patio with premium jointing',          18000.00, 2),
+  (owner_id, 'Swimming Pool Construction',          'Full excavation, structural build, tiling, and equipment fit-out for an in-ground pool',      85000.00, 3),
+  (owner_id, 'Outdoor Kitchen & BBQ Area',          'Built-in grill station, countertops, cabinetry, and utility connections',                     22000.00, 4),
+  (owner_id, 'Pergola / Gazebo Construction',       'Custom timber or steel structure with optional roofing and finishing',                         14000.00, 5),
+  (owner_id, 'Irrigation System Installation',      'Design and installation of a zoned automatic drip or spray irrigation system',                 6500.00,  6),
+  (owner_id, 'Outdoor Lighting Design & Install',   'Low-voltage landscape lighting scheme with fixtures, wiring, and smart controls',              8000.00,  7),
+  (owner_id, 'Retaining Wall Construction',         'Engineered retaining wall using natural stone, block, or timber for sloped sites',             12000.00, 8),
+  (owner_id, 'Driveway & Pathways Paving',          'Premium paving using natural stone, exposed aggregate, or stamped concrete',                   16000.00, 9),
+  (owner_id, 'Garden Planting & Landscaping',       'Supply and installation of trees, shrubs, ground cover, and mulching per approved plan',       9500.00,  10);
+
 END $$;
