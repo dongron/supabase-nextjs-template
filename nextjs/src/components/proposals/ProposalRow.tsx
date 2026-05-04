@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import {
   STAGE_LABELS,
   isOverdueReview,
   type ProposalRow,
   type ProposalStage,
 } from '@/lib/proposals';
+import { Button } from '@/components/ui/button';
+import ProspectActionModal from './ProspectActionModal';
 
 type DesignerState = {
   designer_notified: boolean;
@@ -53,9 +54,10 @@ function formatDateTime(isoString: string): string {
 interface ProposalRowProps {
   proposal: ProposalRow;
   onDelete: (id: string) => void;
+  onMemoUpdate: (id: string, memo: string | null) => void;
 }
 
-export default function ProposalRowComponent({ proposal, onDelete }: ProposalRowProps) {
+export default function ProposalRowComponent({ proposal, onDelete, onMemoUpdate }: ProposalRowProps) {
   const overdue = isOverdueReview(proposal);
 
   const [designerState, setDesignerState] = useState<DesignerState>({
@@ -67,20 +69,8 @@ export default function ProposalRowComponent({ proposal, onDelete }: ProposalRow
 
   const [needsAttention, setNeedsAttention] = useState(proposal.needs_attention);
   const [dismissing, setDismissing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  async function handleDelete() {
-    if (!confirm(`Remove proposal for "${proposal.customer_name}"? This cannot be undone.`)) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/app/proposals/${proposal.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        onDelete(proposal.id);
-      }
-    } finally {
-      setDeleting(false);
-    }
-  }
+  const [modalOpen, setModalOpen] = useState(false);
+  const [memo, setMemo] = useState<string | null>(proposal.voice_memo ?? null);
 
   const isRenderEtaOverdueLocal =
     !!proposal.render_required &&
@@ -108,6 +98,7 @@ export default function ProposalRowComponent({ proposal, onDelete }: ProposalRow
   }
 
   return (
+    <>
     <tr
       className={`border-b transition-colors ${
         overdue
@@ -182,25 +173,27 @@ export default function ProposalRowComponent({ proposal, onDelete }: ProposalRow
 
       {/* Actions */}
       <td className="px-4 py-3 whitespace-nowrap text-right">
-        <div className="flex items-center justify-end gap-3">
-          <Link
-            href={`/app/proposals/${proposal.id}/services`}
-            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            aria-label={`View services for ${proposal.customer_name}`}
-          >
-            Services
-          </Link>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-            aria-label="Remove proposal"
-          >
-            {deleting ? 'Removing…' : 'Remove'}
-          </button>
-        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setModalOpen(true)}
+          aria-label={`Open actions for ${proposal.customer_name}`}
+        >
+          Actions
+        </Button>
       </td>
     </tr>
+    <ProspectActionModal
+      proposal={{ ...proposal, voice_memo: memo }}
+      open={modalOpen}
+      onOpenChange={setModalOpen}
+      onDelete={onDelete}
+      onMemoUpdate={(id, m) => {
+        setMemo(m);
+        onMemoUpdate(id, m);
+      }}
+    />
+    </>
   );
 }
 

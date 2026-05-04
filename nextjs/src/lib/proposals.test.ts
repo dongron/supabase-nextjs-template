@@ -27,6 +27,7 @@ function makeProposal(overrides: Partial<ProposalRow> = {}): ProposalRow {
     needs_attention: false,
     owner: 'user-1',
     archived_at: null,
+    voice_memo: null,
     ...overrides,
   };
 }

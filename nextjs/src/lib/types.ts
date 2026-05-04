@@ -57,6 +57,7 @@ export type Database = {
           needs_attention: boolean
           owner: string
           archived_at: string | null
+          voice_memo: string | null
         }
         Insert: {
           id?: string
@@ -91,6 +92,7 @@ export type Database = {
           needs_attention?: boolean
           owner?: string
           archived_at?: string | null
+          voice_memo?: string | null
         }
         Relationships: [
           {

@@ -20,9 +20,15 @@ export default function ProposalsView({ proposals: initial }: ProposalsViewProps
     setProposals((prev) => [proposal, ...prev]);
   }
 
+  function handleMemoUpdate(id: string, memo: string | null) {
+    setProposals((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, voice_memo: memo } : p)),
+    );
+  }
+
   return (
     <>
-      <ProposalQueue proposals={proposals} onDelete={handleDelete} />
+      <ProposalQueue proposals={proposals} onDelete={handleDelete} onMemoUpdate={handleMemoUpdate} />
       <AddProposalForm onAdd={handleAdd} />
     </>
   );
