@@ -29,6 +29,8 @@ function makeProposal(overrides: Partial<ProposalRow> = {}): ProposalRow {
     archived_at: null,
     voice_memo: null,
     quote: null,
+    email: 'customer@example.com',
+    quote_sent: false,
     ...overrides,
   };
 }

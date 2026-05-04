@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     estimated_value,
     stage,
     walk_date,
+    email,
   } = body as Record<string, unknown>;
 
   if (
@@ -71,12 +72,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (
+    typeof email !== 'string' ||
+    email.trim() === '' ||
+    !EMAIL_PATTERN.test(email.trim())
+  ) {
+    return NextResponse.json(
+      { error: 'A valid email address is required' },
+      { status: 400 },
+    );
+  }
+
   const insert: ProposalInsert = {
     customer_name: customer_name.trim(),
     neighborhood: neighborhood.trim(),
     estimated_value: estimated_value as number,
     stage: stage as string,
     owner: user.id,
+    email: email.trim(),
     ...(typeof walk_date === 'string' && walk_date.trim() !== ''
       ? { walk_date: walk_date.trim() }
       : {}),

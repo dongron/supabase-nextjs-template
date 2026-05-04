@@ -5,9 +5,12 @@ import { STAGE_LABELS, type ProposalStage, type ProposalRow } from '@/lib/propos
 
 const STAGES = Object.keys(STAGE_LABELS) as ProposalStage[];
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 type FormState = {
   customer_name: string;
   neighborhood: string;
+  email: string;
   walk_date: string;
   estimated_value: string;
   stage: ProposalStage;
@@ -16,6 +19,7 @@ type FormState = {
 const INITIAL_STATE: FormState = {
   customer_name: '',
   neighborhood: '',
+  email: '',
   walk_date: '',
   estimated_value: '',
   stage: 'lead_received',
@@ -29,6 +33,9 @@ export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [customerNameError, setCustomerNameError] = useState('');
+  const [neighborhoodError, setNeighborhoodError] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -41,6 +48,30 @@ export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setCustomerNameError('');
+    setNeighborhoodError('');
+    setEmailError('');
+
+    if (form.customer_name.trim() === '') {
+      setCustomerNameError('Customer name is required.');
+      setLoading(false);
+      return;
+    }
+    if (form.neighborhood.trim() === '') {
+      setNeighborhoodError('Neighborhood is required.');
+      setLoading(false);
+      return;
+    }
+    if (form.email.trim() === '') {
+      setEmailError('Email is required.');
+      setLoading(false);
+      return;
+    }
+    if (!EMAIL_PATTERN.test(form.email.trim())) {
+      setEmailError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
 
     const estimatedValue = parseFloat(form.estimated_value);
     if (isNaN(estimatedValue) || estimatedValue < 0) {
@@ -53,6 +84,7 @@ export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
       const body: Record<string, unknown> = {
         customer_name: form.customer_name.trim(),
         neighborhood: form.neighborhood.trim(),
+        email: form.email.trim(),
         estimated_value: estimatedValue,
         stage: form.stage,
       };
@@ -108,6 +140,11 @@ export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
               placeholder="James Harrington"
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {customerNameError && (
+              <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {customerNameError}
+              </p>
+            )}
           </div>
 
           {/* Neighborhood */}
@@ -128,6 +165,36 @@ export default function AddProposalForm({ onAdd }: AddProposalFormProps) {
               placeholder="River Oaks"
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {neighborhoodError && (
+              <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {neighborhoodError}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Email <span aria-hidden="true">*</span>
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={form.email}
+              onChange={handleChange}
+              placeholder="customer@example.com"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {emailError && (
+              <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {emailError}
+              </p>
+            )}
           </div>
 
           {/* Walk date */}

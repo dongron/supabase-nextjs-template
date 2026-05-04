@@ -1,10 +1,10 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGlobal } from '@/lib/context/GlobalContext';
 import { createSPASassClientAuthenticated as createSPASassClient } from '@/lib/supabase/client';
-import { Key, User, CheckCircle } from 'lucide-react';
+import { Key, User, CheckCircle, Mail } from 'lucide-react';
 import { MFASetup } from '@/components/MFASetup';
 
 export default function UserSettingsPage() {
@@ -15,7 +15,60 @@ export default function UserSettingsPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
+    const [designerEmail, setDesignerEmail] = useState('');
+    const [designerEmailLoading, setDesignerEmailLoading] = useState(true);
+    const [designerEmailSaving, setDesignerEmailSaving] = useState(false);
+    const [designerEmailError, setDesignerEmailError] = useState<string | null>(null);
+    const [designerEmailSuccess, setDesignerEmailSuccess] = useState(false);
 
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    useEffect(() => {
+        if (!user) return;
+        void (async () => {
+            try {
+                const supabase = await createSPASassClient();
+                const { data } = await supabase
+                    .getSupabaseClient()
+                    .from('app_settings')
+                    .select('designer_email')
+                    .eq('owner', user.id)
+                    .maybeSingle();
+                if (data?.designer_email) {
+                    setDesignerEmail(data.designer_email);
+                }
+            } finally {
+                setDesignerEmailLoading(false);
+            }
+        })();
+    }, [user]);
+
+    const handleSaveDesignerEmail = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setDesignerEmailError(null);
+        setDesignerEmailSuccess(false);
+        if (!designerEmail.trim() || !EMAIL_PATTERN.test(designerEmail.trim())) {
+            setDesignerEmailError('Please enter a valid email address');
+            return;
+        }
+        setDesignerEmailSaving(true);
+        try {
+            const supabase = await createSPASassClient();
+            const { error: upsertError } = await supabase
+                .getSupabaseClient()
+                .from('app_settings')
+                .upsert(
+                    { owner: user!.id, designer_email: designerEmail.trim() },
+                    { onConflict: 'owner' },
+                );
+            if (upsertError) throw upsertError;
+            setDesignerEmailSuccess(true);
+        } catch (err: Error | unknown) {
+            setDesignerEmailError(err instanceof Error ? err.message : 'Failed to save');
+        } finally {
+            setDesignerEmailSaving(false);
+        }
+    };
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,6 +205,54 @@ export default function UserSettingsPage() {
                             setSuccess('Two-factor authentication settings updated successfully');
                         }}
                     />
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Mail className="h-5 w-5" />
+                                Designer Email
+                            </CardTitle>
+                            <CardDescription>
+                                Email address to notify when a quote exceeds $30,000
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {designerEmailError && (
+                                <Alert variant="destructive" className="mb-4">
+                                    <AlertDescription>{designerEmailError}</AlertDescription>
+                                </Alert>
+                            )}
+                            {designerEmailSuccess && (
+                                <Alert className="mb-4">
+                                    <CheckCircle className="h-4 w-4" />
+                                    <AlertDescription>Designer email saved successfully</AlertDescription>
+                                </Alert>
+                            )}
+                            <form onSubmit={handleSaveDesignerEmail} className="space-y-4">
+                                <div>
+                                    <label htmlFor="designer-email" className="block text-sm font-medium text-gray-700">
+                                        Designer Email Address
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="designer-email"
+                                        value={designerEmail}
+                                        onChange={(e) => setDesignerEmail(e.target.value)}
+                                        disabled={designerEmailLoading}
+                                        placeholder="designer@example.com"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 text-sm disabled:opacity-50"
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={designerEmailSaving || designerEmailLoading}
+                                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                                >
+                                    {designerEmailSaving ? 'Saving…' : 'Save Designer Email'}
+                                </button>
+                            </form>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

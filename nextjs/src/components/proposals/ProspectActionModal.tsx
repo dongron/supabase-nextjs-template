@@ -1,13 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -15,7 +24,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { ProposalRow, ProposalStage } from '@/lib/proposals';
 import { STAGE_LABELS } from '@/lib/proposals';
 import ReviewQuoteModal from './ReviewQuoteModal';
-import { parseTextQuote, type QuoteService } from '@/lib/quote';
+import { parseTextQuote, calculateQuoteTotal, type QuoteService } from '@/lib/quote';
 
 interface ProspectActionModalProps {
   proposal: ProposalRow;
@@ -50,6 +59,14 @@ export default function ProspectActionModal({
   const [localStage, setLocalStage] = useState<string>(proposal.stage);
   const [stageSaving, setStageSaving] = useState(false);
   const [stageError, setStageError] = useState<string | null>(null);
+  const [localQuoteSent, setLocalQuoteSent] = useState<boolean>(proposal.quote_sent ?? false);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
+  const [sendQuoteError, setSendQuoteError] = useState<string | null>(null);
+  const [showResendConfirm, setShowResendConfirm] = useState(false);
+  const [isNotifyingDesigner, setIsNotifyingDesigner] = useState(false);
+  const [designerNotifyError, setDesignerNotifyError] = useState<string | null>(null);
+
+  const quoteTotal = localQuote ? calculateQuoteTotal(parseTextQuote(localQuote)) : 0;
 
   // Reset local state whenever the modal opens (or proposal changes)
   useEffect(() => {
@@ -62,8 +79,12 @@ export default function ProspectActionModal({
       setLocalQuote(proposal.quote ?? null);
       setLocalStage(proposal.stage);
       setStageError(null);
+      setLocalQuoteSent(proposal.quote_sent ?? false);
+      setSendQuoteError(null);
+      setShowResendConfirm(false);
+      setDesignerNotifyError(null);
     }
-  }, [open, proposal.voice_memo, proposal.quote, proposal.stage]);
+  }, [open, proposal.voice_memo, proposal.quote, proposal.stage, proposal.quote_sent]);
 
   async function handleStageChange(newStage: ProposalStage) {
     const prev = localStage;
@@ -173,6 +194,46 @@ export default function ProspectActionModal({
       setQuoteError('Network error. Please try again.');
     } finally {
       setIsSavingQuote(false);
+    }
+  }
+
+  async function handleSendQuote() {
+    setIsSendingQuote(true);
+    setSendQuoteError(null);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/send-quote`, {
+        method: 'POST',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSendQuoteError((body as { error?: string }).error ?? 'Failed to send email');
+        return;
+      }
+      setLocalQuoteSent(true);
+    } catch {
+      setSendQuoteError('Network error. Please try again.');
+    } finally {
+      setIsSendingQuote(false);
+      setShowResendConfirm(false);
+    }
+  }
+
+  async function handleNotifyDesigner() {
+    setIsNotifyingDesigner(true);
+    setDesignerNotifyError(null);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/notify-designer-email`, {
+        method: 'POST',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDesignerNotifyError((body as { error?: string }).error ?? 'Failed to send notification');
+        return;
+      }
+    } catch {
+      setDesignerNotifyError('Network error. Please try again.');
+    } finally {
+      setIsNotifyingDesigner(false);
     }
   }
 
@@ -304,17 +365,47 @@ export default function ProspectActionModal({
                 >
                   Edit Quote
                 </Button>
+                {sendQuoteError && (
+                  <Alert variant="destructive" role="alert">
+                    <AlertDescription>{sendQuoteError}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSendingQuote}
+                  onClick={() => {
+                    if (localQuoteSent) {
+                      setShowResendConfirm(true);
+                    } else {
+                      void handleSendQuote();
+                    }
+                  }}
+                  aria-label="Send quote to customer"
+                >
+                  {isSendingQuote ? 'Sending…' : localQuoteSent ? 'Resend to customer' : 'Send to customer'}
+                </Button>
+                {designerNotifyError && (
+                  <Alert variant="destructive" role="alert">
+                    <AlertDescription>{designerNotifyError}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={quoteTotal <= 30000 || isNotifyingDesigner}
+                  title={quoteTotal <= 30000 ? 'Requires quote total > $30,000' : undefined}
+                  onClick={() => void handleNotifyDesigner()}
+                  aria-label="Notify designer about high-value quote"
+                >
+                  {isNotifyingDesigner ? 'Notifying…' : 'Notify designer'}
+                </Button>
               </div>
             )}
           </div>
 
           {/* Bottom actions */}
           <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-            {/* <Button variant="secondary" asChild className="w-full">
-              <Link href={`/app/proposals/${proposal.id}/services`}>
-                Services
-              </Link>
-            </Button> */}
             {deleteError && (
               <p className="text-sm text-red-500 dark:text-red-400" role="alert">
                 {deleteError}
@@ -341,6 +432,23 @@ export default function ProspectActionModal({
       onSave={handleSaveQuote}
       isSaving={isSavingQuote}
     />
+
+    <AlertDialog open={showResendConfirm} onOpenChange={setShowResendConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Quote already sent</AlertDialogTitle>
+          <AlertDialogDescription>
+            A quote email has already been sent to this customer. Send again?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void handleSendQuote()}>
+            Send again
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }

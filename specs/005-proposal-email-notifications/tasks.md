@@ -16,9 +16,9 @@
 
 **Purpose**: Install missing dependency and create all database migrations before any code changes.
 
-- [ ] T001 Install `resend` npm package: run `pnpm add resend` in `nextjs/`
-- [ ] T002 Create Supabase migration `supabase/migrations/20260504150000_add_email_to_proposals.sql` — add `email text NOT NULL DEFAULT ''` and `quote_sent boolean NOT NULL DEFAULT false` columns to `public.proposals`; backfill any NULL email rows with empty string
-- [ ] T003 Create Supabase migration `supabase/migrations/20260504160000_create_app_settings.sql` — create `public.app_settings` table with columns `id uuid PK`, `owner uuid FK auth.users`, `designer_email text NOT NULL DEFAULT ''`; add RLS policies (select/insert/update own row); add unique constraint on `owner`
+- [X] T001 Install `resend` npm package: run `pnpm add resend` in `nextjs/`
+- [X] T002 Create Supabase migration `supabase/migrations/20260504150000_add_email_to_proposals.sql` — add `email text NOT NULL DEFAULT ''` and `quote_sent boolean NOT NULL DEFAULT false` columns to `public.proposals`; backfill any NULL email rows with empty string
+- [X] T003 Create Supabase migration `supabase/migrations/20260504160000_create_app_settings.sql` — create `public.app_settings` table with columns `id uuid PK`, `owner uuid FK auth.users`, `designer_email text NOT NULL DEFAULT ''`; add RLS policies (select/insert/update own row); add unique constraint on `owner`
 
 **Checkpoint**: Migrations ready to apply — no TypeScript or component work can be done before types reflect the new schema.
 
@@ -30,9 +30,9 @@
 
 **⚠️ CRITICAL**: Phases 3–6 all depend on T004, T005, and T006.
 
-- [ ] T004 [P] Update `nextjs/src/lib/types.ts` — add `email: string` and `quote_sent: boolean` to `proposals` Row, Insert, and Update; add `app_settings` table with Row `{ id: string; owner: string; designer_email: string }`, Insert `{ id?: string; owner: string; designer_email?: string }`, Update `{ designer_email?: string }`
-- [ ] T005 [P] Add `calculateQuoteTotal(services: QuoteService[]): number` to `nextjs/src/lib/quote.ts` — returns the sum of all `price` values where `price !== null`; returns `0` for an empty array
-- [ ] T006 [P] Create `nextjs/src/lib/email.ts` — add `import 'server-only'` guard at top; initialise Resend client from `process.env.PRIVATE_RESEND_API_KEY`; export `sendCustomerQuoteEmail(to: string, customerName: string, services: QuoteService[]): Promise<void>` (greeting + service line-items + grand total + thank-you + "CEO of Greenscape Pro" signature); export `sendDesignerNotificationEmail(to: string, customerName: string, neighborhood: string, services: QuoteService[]): Promise<void>` (proposal overview + service list + total); sender address is `onboarding@resend.dev` for both
+- [X] T004 [P] Update `nextjs/src/lib/types.ts` — add `email: string` and `quote_sent: boolean` to `proposals` Row, Insert, and Update; add `app_settings` table with Row `{ id: string; owner: string; designer_email: string }`, Insert `{ id?: string; owner: string; designer_email?: string }`, Update `{ designer_email?: string }`
+- [X] T005 [P] Add `calculateQuoteTotal(services: QuoteService[]): number` to `nextjs/src/lib/quote.ts` — returns the sum of all `price` values where `price !== null`; returns `0` for an empty array
+- [X] T006 [P] Create `nextjs/src/lib/email.ts` — add `import 'server-only'` guard at top; initialise Resend client from `process.env.PRIVATE_RESEND_API_KEY`; export `sendCustomerQuoteEmail(to: string, customerName: string, services: QuoteService[]): Promise<void>` (greeting + service line-items + grand total + thank-you + "CEO of Greenscape Pro" signature); export `sendDesignerNotificationEmail(to: string, customerName: string, neighborhood: string, services: QuoteService[]): Promise<void>` (proposal overview + service list + total); sender address is `onboarding@resend.dev` for both
 
 **Checkpoint**: Foundation ready — user story phases can now be implemented sequentially.
 
@@ -44,8 +44,8 @@
 
 **Independent Test**: Open the Add Proposal form, enter a valid email, submit — verify the returned `ProposalRow` includes the email. Then submit without an email — verify a 400 error is returned and the form shows a validation error.
 
-- [ ] T007 [US1] Update `nextjs/src/app/api/app/proposals/route.ts` POST handler — extract `email` from the request body, validate it is a non-empty string matching a basic email pattern (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`), return 400 if missing or malformed, and include `email` in the `ProposalInsert` object passed to Supabase
-- [ ] T008 [US1] Update `nextjs/src/components/proposals/AddProposalForm.tsx` — add `email: string` to `FormState` and `INITIAL_STATE`; add an `<input type="email" name="email" required />` field labelled "Email" between the `neighborhood` and `walk_date` fields; validate that `email` is non-empty and matches basic email format before `fetch`; pass `email` in the POST body; display a field-level error if validation fails
+- [X] T007 [US1] Update `nextjs/src/app/api/app/proposals/route.ts` POST handler — extract `email` from the request body, validate it is a non-empty string matching a basic email pattern (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`), return 400 if missing or malformed, and include `email` in the `ProposalInsert` object passed to Supabase
+- [X] T008 [US1] Update `nextjs/src/components/proposals/AddProposalForm.tsx` — add `email: string` to `FormState` and `INITIAL_STATE`; add an `<input type="email" name="email" required />` field labelled "Email" between the `neighborhood` and `walk_date` fields; validate that `email` is non-empty and matches basic email format before `fetch`; pass `email` in the POST body; display a field-level error if validation fails
 
 **Checkpoint**: User Story 1 fully functional — proposals can be created with a customer email address.
 
@@ -57,8 +57,8 @@
 
 **Independent Test**: Create a proposal with a valid email, generate and save a quote, open the action modal — verify "Send to customer" button appears. Click it, confirm an email is received. Click it again — verify a confirmation dialog appears. Cancel — verify no second email is sent.
 
-- [ ] T009 [US2] Create `nextjs/src/app/api/app/proposals/[id]/send-quote/route.ts` — export `POST` handler: authenticate user, fetch proposal by `id` and `owner` (select `email`, `quote`, `customer_name`, `quote_sent`); return 404 if not found; return 400 if `quote` is null or `email` is empty; call `sendCustomerQuoteEmail` from `nextjs/src/lib/email.ts` with parsed services from `parseStoredQuote(quote)`; on success, update `quote_sent = true` on the proposal row; return `{ ok: true }` or a structured error response
-- [ ] T010 [US2] Update `nextjs/src/components/proposals/ProspectActionModal.tsx` — add `localQuoteSent` state initialised from `proposal.quote_sent`; add `isSendingQuote` boolean state; add `showResendConfirm` boolean state; render a "Send to customer" button visible only when `localQuote` is non-null, placed below the "Edit Quote" button; clicking the button checks `localQuoteSent`: if true, set `showResendConfirm = true` (shows a confirmation `<AlertDialog>` — "Quote already sent — send again?"); on confirm (or first send), POST to `/api/app/proposals/${proposal.id}/send-quote`, disable button during in-flight, show success toast on `ok: true`, show error `<Alert>` on failure, set `localQuoteSent = true` on success
+- [X] T009 [US2] Create `nextjs/src/app/api/app/proposals/[id]/send-quote/route.ts` — export `POST` handler: authenticate user, fetch proposal by `id` and `owner` (select `email`, `quote`, `customer_name`, `quote_sent`); return 404 if not found; return 400 if `quote` is null or `email` is empty; call `sendCustomerQuoteEmail` from `nextjs/src/lib/email.ts` with parsed services from `parseStoredQuote(quote)`; on success, update `quote_sent = true` on the proposal row; return `{ ok: true }` or a structured error response
+- [X] T010 [US2] Update `nextjs/src/components/proposals/ProspectActionModal.tsx` — add `localQuoteSent` state initialised from `proposal.quote_sent`; add `isSendingQuote` boolean state; add `showResendConfirm` boolean state; render a "Send to customer" button visible only when `localQuote` is non-null, placed below the "Edit Quote" button; clicking the button checks `localQuoteSent`: if true, set `showResendConfirm = true` (shows a confirmation `<AlertDialog>` — "Quote already sent — send again?"); on confirm (or first send), POST to `/api/app/proposals/${proposal.id}/send-quote`, disable button during in-flight, show success toast on `ok: true`, show error `<Alert>` on failure, set `localQuoteSent = true` on success
 
 **Checkpoint**: User Story 2 fully functional — quotes can be emailed to customers with re-send protection.
 
@@ -70,8 +70,8 @@
 
 **Independent Test**: Generate a quote below $30,000 — "Notify designer" button is visible but disabled. Edit quote total above $30,000 — button becomes enabled. Click it — verify designer email is received. Click when no designer email is configured — verify an informative inline error is shown.
 
-- [ ] T011 [US3] Create `nextjs/src/app/api/app/proposals/[id]/notify-designer-email/route.ts` — export `POST` handler: authenticate user, fetch proposal by `id` and `owner` (select `quote`, `customer_name`, `neighborhood`); return 404 if not found; return 400 if `quote` is null; parse services with `parseStoredQuote(quote)`, calculate total with `calculateQuoteTotal(services)`; return 400 with `{ error: 'Quote total does not exceed threshold' }` if total ≤ 30000; fetch designer email from `app_settings` where `owner = user.id`; return 400 with `{ error: 'No designer email configured. Please set it in Settings.' }` if empty or not found; call `sendDesignerNotificationEmail` from `nextjs/src/lib/email.ts`; return `{ ok: true }` or structured error
-- [ ] T012 [US3] Update `nextjs/src/components/proposals/ProspectActionModal.tsx` — add `isNotifyingDesigner` boolean state; add `designerNotifyError` string-or-null state; calculate `quoteTotal` using `calculateQuoteTotal(parseStoredQuote(localQuote))` when `localQuote` changes; render a "Notify designer" button visible only when `localQuote` is non-null, placed below "Send to customer"; disable the button when `quoteTotal <= 30000` or `isNotifyingDesigner` is true; add a tooltip/title `"Requires quote total > $30,000"` when disabled due to threshold; on click, POST to `/api/app/proposals/${proposal.id}/notify-designer-email`, set `isNotifyingDesigner = true` while in-flight, show success toast on `ok: true`, show `designerNotifyError` alert on failure (use the server's `error` message verbatim so the "configure in Settings" hint is shown)
+- [X] T011 [US3] Create `nextjs/src/app/api/app/proposals/[id]/notify-designer-email/route.ts` — export `POST` handler: authenticate user, fetch proposal by `id` and `owner` (select `quote`, `customer_name`, `neighborhood`); return 404 if not found; return 400 if `quote` is null; parse services with `parseStoredQuote(quote)`, calculate total with `calculateQuoteTotal(services)`; return 400 with `{ error: 'Quote total does not exceed threshold' }` if total ≤ 30000; fetch designer email from `app_settings` where `owner = user.id`; return 400 with `{ error: 'No designer email configured. Please set it in Settings.' }` if empty or not found; call `sendDesignerNotificationEmail` from `nextjs/src/lib/email.ts`; return `{ ok: true }` or structured error
+- [X] T012 [US3] Update `nextjs/src/components/proposals/ProspectActionModal.tsx` — add `isNotifyingDesigner` boolean state; add `designerNotifyError` string-or-null state; calculate `quoteTotal` using `calculateQuoteTotal(parseStoredQuote(localQuote))` when `localQuote` changes; render a "Notify designer" button visible only when `localQuote` is non-null, placed below "Send to customer"; disable the button when `quoteTotal <= 30000` or `isNotifyingDesigner` is true; add a tooltip/title `"Requires quote total > $30,000"` when disabled due to threshold; on click, POST to `/api/app/proposals/${proposal.id}/notify-designer-email`, set `isNotifyingDesigner = true` while in-flight, show success toast on `ok: true`, show `designerNotifyError` alert on failure (use the server's `error` message verbatim so the "configure in Settings" hint is shown)
 
 **Checkpoint**: User Story 3 fully functional — designers receive alerts for high-value quotes.
 
@@ -83,7 +83,7 @@
 
 **Independent Test**: Open user settings — "Designer email" field is visible. Enter a valid email and save — verify the value persists after page reload. Enter an invalid email — verify form prevents saving and shows an error.
 
-- [ ] T013 [US4] Update `nextjs/src/app/app/user-settings/page.tsx` — add `designerEmail` and `designerEmailLoading` / `designerEmailSaving` / `designerEmailError` / `designerEmailSuccess` state; on mount (useEffect), query `app_settings` via Supabase client `select('designer_email').eq('owner', user.id).maybeSingle()` and pre-fill the field; render a "Designer email" section inside the existing `<Card>` layout with an `<input type="email">` field; on save, validate the email format; upsert into `app_settings` `{ owner: user.id, designer_email }` using `.upsert({ owner: user.id, designer_email }, { onConflict: 'owner' })`; show success or error feedback using the existing alert pattern in the file
+- [X] T013 [US4] Update `nextjs/src/app/app/user-settings/page.tsx` — add `designerEmail` and `designerEmailLoading` / `designerEmailSaving` / `designerEmailError` / `designerEmailSuccess` state; on mount (useEffect), query `app_settings` via Supabase client `select('designer_email').eq('owner', user.id).maybeSingle()` and pre-fill the field; render a "Designer email" section inside the existing `<Card>` layout with an `<input type="email">` field; on save, validate the email format; upsert into `app_settings` `{ owner: user.id, designer_email }` using `.upsert({ owner: user.id, designer_email }, { onConflict: 'owner' })`; show success or error feedback using the existing alert pattern in the file
 
 **Checkpoint**: User Story 4 fully functional — designer email can be managed without code changes.
 
@@ -91,8 +91,8 @@
 
 ## Final Phase: Polish & Cross-Cutting Concerns
 
-- [ ] T014 [P] Review `nextjs/src/lib/email.ts` to confirm `import 'server-only'` is present and the file has no `'use client'` directive; verify `process.env.PRIVATE_RESEND_API_KEY` is read directly (not passed through props or context)
-- [ ] T015 [P] Verify that `nextjs/src/lib/types.ts` `proposals.Insert` does NOT mark `email` as optional (it should be required at the type level to match `NOT NULL` in DB); if it was added as `email?: string`, change to `email: string`
+- [X] T014 [P] Review `nextjs/src/lib/email.ts` to confirm `import 'server-only'` is present and the file has no `'use client'` directive; verify `process.env.PRIVATE_RESEND_API_KEY` is read directly (not passed through props or context)
+- [X] T015 [P] Verify that `nextjs/src/lib/types.ts` `proposals.Insert` does NOT mark `email` as optional (it should be required at the type level to match `NOT NULL` in DB); if it was added as `email?: string`, change to `email: string`
 
 ---
 

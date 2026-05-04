@@ -32,6 +32,8 @@ function makeProposal(overrides: Partial<ProposalRow> = {}): ProposalRow {
     archived_at: null,
     voice_memo: null,
     quote: null,
+    email: 'customer@example.com',
+    quote_sent: false,
     ...overrides,
   };
 }
@@ -41,6 +43,7 @@ const defaultProps = {
   onOpenChange: vi.fn(),
   onDelete: vi.fn(),
   onMemoUpdate: vi.fn(),
+  onStageUpdate: vi.fn(),
 };
 
 function renderModal(proposalOverrides: Partial<ProposalRow> = {}, propOverrides = {}) {

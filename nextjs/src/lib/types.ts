@@ -59,6 +59,8 @@ export type Database = {
           archived_at: string | null
           voice_memo: string | null
           quote: string | null
+          email: string
+          quote_sent: boolean
         }
         Insert: {
           id?: string
@@ -76,6 +78,8 @@ export type Database = {
           needs_attention?: boolean
           owner: string
           archived_at?: string | null
+          email: string
+          quote_sent?: boolean
         }
         Update: {
           id?: string
@@ -95,12 +99,38 @@ export type Database = {
           archived_at?: string | null
           voice_memo?: string | null
           quote?: string | null
+          email?: string
+          quote_sent?: boolean
         }
         Relationships: [
           {
             foreignKeyName: 'proposals_owner_fkey'
             columns: ['owner']
             isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      app_settings: {
+        Row: {
+          id: string
+          owner: string
+          designer_email: string
+        }
+        Insert: {
+          id?: string
+          owner: string
+          designer_email?: string
+        }
+        Update: {
+          designer_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'app_settings_owner_fkey'
+            columns: ['owner']
+            isOneToOne: true
             referencedRelation: 'users'
             referencedColumns: ['id']
           }

@@ -75,3 +75,11 @@ export function parseTextQuote(text: string | null): QuoteService[] {
   }
   return services;
 }
+
+/**
+ * Returns the sum of all non-null price values in the services array.
+ * Returns 0 for an empty array or when all prices are null.
+ */
+export function calculateQuoteTotal(services: QuoteService[]): number {
+  return services.reduce((sum, s) => sum + (s.price !== null ? s.price : 0), 0);
+}
