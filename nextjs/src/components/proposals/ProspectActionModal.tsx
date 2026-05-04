@@ -65,6 +65,9 @@ export default function ProspectActionModal({
   const [showResendConfirm, setShowResendConfirm] = useState(false);
   const [isNotifyingDesigner, setIsNotifyingDesigner] = useState(false);
   const [designerNotifyError, setDesignerNotifyError] = useState<string | null>(null);
+  const [isNotifyingSlack, setIsNotifyingSlack] = useState(false);
+  const [slackNotifyError, setSlackNotifyError] = useState<string | null>(null);
+  const [slackNotifySent, setSlackNotifySent] = useState(false);
 
   const quoteTotal = localQuote ? calculateQuoteTotal(parseTextQuote(localQuote)) : 0;
 
@@ -83,6 +86,8 @@ export default function ProspectActionModal({
       setSendQuoteError(null);
       setShowResendConfirm(false);
       setDesignerNotifyError(null);
+      setSlackNotifyError(null);
+      setSlackNotifySent(false);
     }
   }, [open, proposal.voice_memo, proposal.quote, proposal.stage, proposal.quote_sent]);
 
@@ -234,6 +239,28 @@ export default function ProspectActionModal({
       setDesignerNotifyError('Network error. Please try again.');
     } finally {
       setIsNotifyingDesigner(false);
+    }
+  }
+
+  async function handleNotifySlack() {
+    setIsNotifyingSlack(true);
+    setSlackNotifyError(null);
+    setSlackNotifySent(false);
+    try {
+      const res = await fetch(`/api/app/proposals/${proposal.id}/notify-slack`, {
+        method: 'POST',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSlackNotifyError((body as { error?: string }).error ?? 'Failed to send Slack notification');
+        return;
+      }
+      setSlackNotifySent(true);
+      setTimeout(() => setSlackNotifySent(false), 1500);
+    } catch {
+      setSlackNotifyError('Network error. Please try again.');
+    } finally {
+      setIsNotifyingSlack(false);
     }
   }
 
@@ -399,6 +426,21 @@ export default function ProspectActionModal({
                   aria-label="Notify designer about high-value quote"
                 >
                   {isNotifyingDesigner ? 'Notifying…' : 'Notify designer'}
+                </Button>
+                {slackNotifyError && (
+                  <Alert variant="destructive" role="alert">
+                    <AlertDescription>{slackNotifyError}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={quoteTotal <= 30000 || isNotifyingSlack}
+                  title={quoteTotal <= 30000 ? 'Requires quote total > $30,000' : undefined}
+                  onClick={() => void handleNotifySlack()}
+                  aria-label="Notify on Slack"
+                >
+                  {isNotifyingSlack ? 'Notifying…' : slackNotifySent ? 'Sent!' : 'Notify on Slack'}
                 </Button>
               </div>
             )}

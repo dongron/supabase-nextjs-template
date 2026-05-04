@@ -16,7 +16,7 @@
 
 **Purpose**: Environment configuration prerequisite before any code can be tested.
 
-- [ ] T001 Add `PRIVATE_SLACK_WEBHOOK_URL=<your-webhook-url>` to `nextjs/.env.local` (follow `specs/006-slack-notify/quickstart.md` to create the Slack app and obtain the URL)
+- [X] T001 Add `PRIVATE_SLACK_WEBHOOK_URL=<your-webhook-url>` to `nextjs/.env.local` (follow `specs/006-slack-notify/quickstart.md` to create the Slack app and obtain the URL)
 
 ---
 
@@ -38,12 +38,12 @@
 
 > **Tests MUST be written and FAIL before implementation (constitution requirement)**
 
-- [ ] T002 [P] [US1] Write Vitest tests for the notify-slack route covering: 401 when unauthenticated, 404 when proposal not found, 400 when no quote, 400 when quote total ≤ $30,000, 500 when `PRIVATE_SLACK_WEBHOOK_URL` is absent, 500 when Slack returns non-ok, 200 on success — in `nextjs/src/app/api/app/proposals/__tests__/notify-slack.test.ts` (mirror pattern from `routes.test.ts` and `memo.test.ts`)
+- [X] T002 [P] [US1] Write Vitest tests for the notify-slack route covering: 401 when unauthenticated, 404 when proposal not found, 400 when no quote, 400 when quote total ≤ $30,000, 500 when `PRIVATE_SLACK_WEBHOOK_URL` is absent, 500 when Slack returns non-ok, 200 on success — in `nextjs/src/app/api/app/proposals/__tests__/notify-slack.test.ts` (mirror pattern from `routes.test.ts` and `memo.test.ts`)
 
 ### Implementation for User Story 1
 
-- [ ] T003 [P] [US1] Create `POST` handler in `nextjs/src/app/api/app/proposals/[id]/notify-slack/route.ts`: authenticate with `createSSRSassClient` + `auth.getUser()`, fetch proposal `.select('quote, owner').eq('id', id).eq('owner', user.id).single()`, return 404 if not found, 400 if no quote, parse quote with `parseTextQuote` + `calculateQuoteTotal`, return 400 if total ≤ 30000, return 500 if `PRIVATE_SLACK_WEBHOOK_URL` is unset, POST `{"text":"Urgent! Details on your email."}` to webhook URL with `Content-Type: application/json`, return 500 with Slack error body if response not ok, return `{ ok: true }` on success
-- [ ] T004 [US1] Update `nextjs/src/components/proposals/ProspectActionModal.tsx`: add `isNotifyingSlack` boolean state, `slackNotifyError` string-or-null state, and `slackNotifySent` boolean state; add `handleNotifySlack` async function that POSTs to `/api/app/proposals/${proposal.id}/notify-slack`, sets `slackNotifySent = true` on success then resets it after 1500ms via `setTimeout`, sets `slackNotifyError` on failure; add the button (variant `outline`, size `sm`, disabled when `quoteTotal <= 30000 || isNotifyingSlack`, title tooltip matching "Notify designer" pattern, `aria-label="Notify on Slack"`) with label `isNotifyingSlack ? 'Notifying…' : slackNotifySent ? 'Sent!' : 'Notify on Slack'`; add inline `<Alert variant="destructive">` for `slackNotifyError` positioned adjacent to the "Notify designer" button group
+- [X] T003 [P] [US1] Create `POST` handler in `nextjs/src/app/api/app/proposals/[id]/notify-slack/route.ts`: authenticate with `createSSRSassClient` + `auth.getUser()`, fetch proposal `.select('quote, owner').eq('id', id).eq('owner', user.id).single()`, return 404 if not found, 400 if no quote, parse quote with `parseTextQuote` + `calculateQuoteTotal`, return 400 if total ≤ 30000, return 500 if `PRIVATE_SLACK_WEBHOOK_URL` is unset, POST `{"text":"Urgent! Details on your email."}` to webhook URL with `Content-Type: application/json`, return 500 with Slack error body if response not ok, return `{ ok: true }` on success
+- [X] T004 [US1] Update `nextjs/src/components/proposals/ProspectActionModal.tsx`: add `isNotifyingSlack` boolean state, `slackNotifyError` string-or-null state, and `slackNotifySent` boolean state; add `handleNotifySlack` async function that POSTs to `/api/app/proposals/${proposal.id}/notify-slack`, sets `slackNotifySent = true` on success then resets it after 1500ms via `setTimeout`, sets `slackNotifyError` on failure; add the button (variant `outline`, size `sm`, disabled when `quoteTotal <= 30000 || isNotifyingSlack`, title tooltip matching "Notify designer" pattern, `aria-label="Notify on Slack"`) with label `isNotifyingSlack ? 'Notifying…' : slackNotifySent ? 'Sent!' : 'Notify on Slack'`; add inline `<Alert variant="destructive">` for `slackNotifyError` positioned adjacent to the "Notify designer" button group
 
 **Checkpoint**: At this point, User Story 1 is fully functional and independently testable.
 
@@ -53,8 +53,8 @@
 
 **Purpose**: Quality gates and validation before the feature is considered complete.
 
-- [ ] T005 [P] Run `pnpm --filter nextjs lint` and `pnpm --filter nextjs tsc --noEmit` to confirm no lint or type errors introduced by T003 and T004
-- [ ] T006 [P] Run Vitest tests to confirm all T002 tests pass after T003 implementation: `pnpm --filter nextjs test src/app/api/app/proposals/__tests__/notify-slack.test.ts`
+- [X] T005 [P] Run `pnpm --filter nextjs lint` and `pnpm --filter nextjs tsc --noEmit` to confirm no lint or type errors introduced by T003 and T004
+- [X] T006 [P] Run Vitest tests to confirm all T002 tests pass after T003 implementation: `pnpm --filter nextjs test src/app/api/app/proposals/__tests__/notify-slack.test.ts`
 - [ ] T007 Perform manual end-to-end verification following `specs/006-slack-notify/quickstart.md`: open a prospect with quote total > $30,000, click "Notify on Slack", verify "Sent!" label and Slack message delivery
 
 ---
